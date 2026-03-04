@@ -1,62 +1,62 @@
 # Claude Code Server
 
-ブラウザベースの VSCode（code-server）と Claude Code が動作する Docker 開発環境です。
+A Docker-based development environment running browser-based VS Code (code-server) with Claude Code.
 
-## 構成
+## Components
 
-| コンポーネント | バージョン |
-|---|---|
-| ベースイメージ | ubuntu:22.04 |
-| code-server | 最新 |
-| Claude Code | 最新（`@anthropic-ai/claude-code`） |
-| Node.js | 20.x |
-| Python | 3.12 |
-| pip | 最新 |
-| uv | 最新 |
-
----
-
-## 前提条件
-
-- [Docker](https://docs.docker.com/get-docker/) がインストール済みであること
-- [Docker Compose](https://docs.docker.com/compose/install/) が使用可能であること（Docker Desktop には同梱）
-- claude.ai の Pro アカウント（ホスト側で `claude login` によるブラウザ認証済み）
+| Component     | Version / Notes                      |
+|---------------|--------------------------------------|
+| Base image    | ubuntu:22.04                         |
+| code-server   | latest                               |
+| Claude Code   | latest (`@anthropic-ai/claude-code`) |
+| Node.js       | 20.x                                 |
+| Python        | 3.12                                 |
+| pip           | latest                               |
+| uv            | latest                               |
 
 ---
 
-## セットアップ手順
+## Prerequisites
 
-### 1. ワークスペースディレクトリを作成
+- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) available (bundled with Docker Desktop)
+- A claude.ai Pro account with browser authentication completed on the host (`claude login`)
+
+---
+
+## Setup
+
+### 1. Create the workspace directory
 
 ```bash
 mkdir -p workspace
 ```
 
-### 2. Claude Code のブラウザ認証（ホスト側で実施）
+### 2. Authenticate Claude Code on the host
 
-**ホストのターミナル**で以下を実行し、ブラウザ認証を完了させます。
+Run the following in your **host terminal** to complete browser authentication:
 
 ```bash
 claude login
 ```
 
-認証情報は `~/.claude` に保存され、コンテナ起動時に `/root/.claude` としてマウントされます。
+Credentials are saved to `~/.claude` and mounted into the container as `/root/.claude`.
 
-### 3. イメージをビルドして起動
+### 3. Build and start
 
 ```bash
 docker compose up --build
 ```
 
-> 初回ビルドは Python 3.12 などのインストールがあるため、数分かかります。
+> The first build may take a few minutes due to Python 3.12 installation.
 
-バックグラウンドで起動する場合：
+To run in the background:
 
 ```bash
 docker compose up --build -d
 ```
 
-### 4. ブラウザでアクセス
+### 4. Open in browser
 
 ```
 http://localhost:8080
@@ -64,82 +64,80 @@ http://localhost:8080
 
 ---
 
-## Claude Code の使用方法
+## Using Claude Code
 
-code-server のターミナル（ `Ctrl+` ` ` ` ）を開き、以下を実行します。
+Open a terminal in code-server (`` Ctrl+` ``) and run:
 
 ```bash
-# 対話モードで起動
+# Interactive mode
 claude
 
-# ファイルを指定して質問
-claude "このコードを説明してください" --file main.py
+# Ask about a specific file
+claude "Explain this code" --file main.py
 
-# ワンショット実行
-claude -p "Python で Hello World を書いてください"
+# One-shot execution
+claude -p "Write Hello World in Python"
 ```
 
-ホスト側で `claude login` 済みであれば、コンテナ内でも認証なしですぐに利用できます。
+As long as `claude login` was completed on the host, the container requires no additional authentication.
 
 ---
 
-## Python / uv の使用方法
+## Python / uv
 
 ```bash
-# Python バージョン確認
+# Check Python version
 python --version   # Python 3.12.x
 
-# uv で仮想環境を作成
+# Create a virtual environment with uv
 uv venv
 source .venv/bin/activate
 
-# uv でパッケージをインストール
+# Install packages with uv
 uv pip install requests numpy
 
-# pip でインストール（従来の方法）
+# Install packages with pip
 pip install pandas
 ```
 
 ---
 
-## コンテナの停止・削除
+## Stopping the Container
 
 ```bash
-# 停止（データは保持）
+# Stop (data is preserved)
 docker compose down
 
-# 停止＋ボリューム（拡張機能・設定）も削除
+# Stop and remove volumes (extensions, settings)
 docker compose down -v
 ```
 
 ---
 
-## ファイル構成
+## File Structure
 
 ```
 .
-├── Dockerfile            # イメージ定義
-├── docker-compose.yaml   # サービス定義
-├── README.md             # このファイル
-└── workspace/            # 作業ファイルの置き場（コンテナにマウント）
+├── Dockerfile            # Image definition
+├── docker-compose.yaml   # Service definition
+├── README.md             # This file
+└── workspace/            # Working files (mounted into the container)
 ```
 
 ---
 
-## セキュリティについて
+## Security
 
-- code-server は `--auth none`（パスワードなし）で起動しています。**ローカル環境専用**です。
-- 外部に公開する場合はパスワードを設定してください。
-  `docker-compose.yaml` の `environment` に `PASSWORD=your_password` を追加し、
-  `Dockerfile` の `CMD` から `--auth none` を削除します。
+- code-server runs with `--auth none` (no password). **For local use only.**
+- To expose it externally, add `PASSWORD=your_password` to the `environment` section in `docker-compose.yaml` and remove `--auth none` from `CMD` in the `Dockerfile`.
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-| 症状 | 対処 |
-|---|---|
-| `http://localhost:8080` に接続できない | `docker compose ps` でコンテナが起動しているか確認 |
-| Claude Code が認証エラーになる | ホスト側で `claude login` を実行し、`~/.claude` に認証情報があるか確認 |
-| Python 3.12 が見つからない | deadsnakes PPA が更新されていない場合、Dockerfile 内を pyenv ベースに変更してください |
-| ポート 8080 が使用中 | `docker-compose.yaml` の `"8080:8080"` を `"8081:8080"` などに変更 |
+| Symptom | Solution |
+|---------|----------|
+| Cannot connect to `http://localhost:8080` | Run `docker compose ps` to verify the container is running |
+| Claude Code authentication error | Run `claude login` on the host and confirm credentials exist in `~/.claude` |
+| Python 3.12 not found | If the deadsnakes PPA is unavailable, switch the Dockerfile to a pyenv-based setup |
+| Port 8080 already in use | Change `"8080:8080"` to e.g. `"8081:8080"` in `docker-compose.yaml` |
