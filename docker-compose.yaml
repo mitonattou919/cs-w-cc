@@ -1,0 +1,17 @@
+services:
+  code-server:
+    build: .
+    container_name: claude-code-server
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount local workspace/ directory into the container
+      - ./workspace:/workspace
+      # Persist code-server extensions and settings
+      - code-server-data:/root/.local/share/code-server
+      # Share Claude Code browser credentials from the host
+      - ~/.claude:/root/.claude
+    restart: unless-stopped
+
+volumes:
+  code-server-data:
